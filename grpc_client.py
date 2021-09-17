@@ -1,5 +1,6 @@
+import asyncio
 import sys
-import time
+import os
 import logging
 import cv2
 import numpy as np
@@ -83,7 +84,7 @@ class gRPCClient:
         self.input_metadata = metadata.inputs[0]
         self.output_metadata = metadata.outputs[0]
 
-    def do_request(self, image):
+    async def do_request(self, image):
         inputs = []
         outputs = []
         inputs.append(
@@ -100,17 +101,30 @@ class gRPCClient:
                                           inputs=inputs,
                                           outputs=outputs,
                                           client_timeout=None)
+        await asyncio.sleep(0)
         return result.as_numpy(self.output_metadata.name)
 
 
 if __name__ == "__main__":
+    images = []
+    dir_images = 'test_image'
+    names = os.listdir(dir_images)
+    for i in names:
+        images.append(os.path.join(dir_images, i))
     client = gRPCClient(url='localhost:8001', model_name='extractor_onnx')
     client.set_triton_client()
     if client.is_alive():
         client.get_metadata()
-    path_image = 'test_image/track-3.png'
-    image = cv2.imread(path_image)
-    start = time.time()
-    response = client.do_request(image).reshape((1, 512))
-    print('infernce time is {}'.format(time.time() - start))
-    print(response.shape)
+    tasks = []
+    ioloop = asyncio.get_event_loop()
+    for i in images:
+        image = cv2.imread(i)
+        tasks.append(ioloop.create_task(client.do_request(image)))
+    wait_tasks = asyncio.wait(tasks)
+    ioloop.run_until_complete(wait_tasks)
+    for task in tasks:
+        if task.done():
+            result = task.result().reshape((1, 512))
+            print(result.shape)
+            task.cancel()
+    ioloop.close()
