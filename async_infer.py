@@ -30,7 +30,6 @@ class AsyncClient:
             for i in range(len(self.images)):
                 response = self.client.get_response(self.images.pop(0), self.inp_data, self.out_data, i)
                 self.tasks.append(asyncio.create_task(response))
-        # 1. Run in the default loop's executor:
         with concurrent.futures.ThreadPoolExecutor() as pool:
             await running_loop.run_in_executor(pool, block_function)
         await asyncio.gather(*self.tasks)
