@@ -56,8 +56,8 @@ class TritonClient:
                                                 outputs=[infer_output])
         return infer_result.as_numpy(output_data.name)
 
-    async def get_response(self, frame, input_data, output_data, i):
-        print('request image', i)
+    async def get_response(self, frame, input_data, output_data):
+        print('request image')
         infer_input = grpcclient.InferInput(input_data.name, input_data.shape, input_data.datatype)
         infer_output = grpcclient.InferRequestedOutput(output_data.name)
         image_buf = preprocess(frame, input_data.shape[1],

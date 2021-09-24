@@ -3,19 +3,9 @@ import cv2
 import os
 from time import time, sleep
 from triton_client import TritonClient
-import concurrent.futures
 
 
-def block_function():
-    count = 0
-    while True:
-        sleep(0.4)
-        print('count is', count)
-        count += 1
-        if count == 2:
-            break
-
-
+# Такой себе пример
 class AsyncClient:
     def __init__(self):
         self.client = TritonClient(url='localhost:8001', model_name='extractor_onnx')
@@ -26,13 +16,10 @@ class AsyncClient:
         self.responses = []
 
     async def generate_request(self):
-        running_loop = asyncio.get_running_loop()
         if len(images) > 0:
             for i in range(len(self.images)):
                 response = self.client.get_response(self.images.pop(0), self.inp_data, self.out_data)
                 self.tasks.append(asyncio.create_task(response))
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            await running_loop.run_in_executor(pool, block_function)
         await asyncio.gather(*self.tasks)
         for i in range(len(self.tasks)):
             if self.tasks[i].done:
@@ -50,9 +37,14 @@ if __name__ == "__main__":
     names = os.listdir(dir_images)
     for i in names:
         images.append(os.path.join(dir_images, i))
-    t0 = time()
     for i in images:
         img = cv2.imread(i)
         async_client.images.append(img)
-    async_client.run()
-    print('inference time is', time() - t0)
+    count = 0
+    while True:
+        print('count is', count)
+        sleep(1)
+        async_client.run()
+        count += 1
+        if count == 10:
+            break
