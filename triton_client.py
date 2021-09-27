@@ -44,30 +44,17 @@ class TritonClient:
                 len(metadata.outputs)))
         return metadata.inputs[0], metadata.outputs[0]
 
-    def gen_response(self, frame, input_data, output_data):
-        infer_input = grpcclient.InferInput(input_data.name, input_data.shape, input_data.datatype)
-        infer_output = grpcclient.InferRequestedOutput(output_data.name)
-        image_buf = preprocess(frame, input_data.shape[1],
-                               input_data.shape[2],
-                               input_data.shape[3])
+    def gen_response(self, frame):
+        # time.sleep(2)
+        infer_input = grpcclient.InferInput('input0', [1, 3, 112, 112], 'FP32')
+        infer_output = grpcclient.InferRequestedOutput('output0')
+        image_buf = preprocess(frame, 3, 112, 112)
         infer_input.set_data_from_numpy(image_buf)
-        infer_result = self.triton_client.infer(model_name=self.model_name,
-                                                inputs=[infer_input],
-                                                outputs=[infer_output])
-        return infer_result.as_numpy(output_data.name)
-
-    async def get_response(self, frame, input_data, output_data):
-        print('request image')
-        infer_input = grpcclient.InferInput(input_data.name, input_data.shape, input_data.datatype)
-        infer_output = grpcclient.InferRequestedOutput(output_data.name)
-        image_buf = preprocess(frame, input_data.shape[1],
-                               input_data.shape[2],
-                               input_data.shape[3])
-        infer_input.set_data_from_numpy(image_buf)
-        infer_result = self.triton_client.infer(model_name=self.model_name,
-                                                inputs=[infer_input],
-                                                outputs=[infer_output])
-        return infer_result.as_numpy(output_data.name)
+        response = self.triton_client.infer(model_name='extractor_onnx',
+                                            inputs=[infer_input],
+                                            outputs=[infer_output])
+        response = response.as_numpy('output0')
+        return response
 
 
 if __name__ == "__main__":
@@ -79,9 +66,8 @@ if __name__ == "__main__":
         images.append(os.path.join(dir_images, i))
     client = TritonClient(url='localhost:8001', model_name='extractor_onnx')
     if client.is_alive():
-        input_metadata, output_metadata = client.get_metadata()
         for i, img in enumerate(images):
             image = cv2.imread(img)
-            result = client.gen_response(image, input_metadata, output_metadata)
+            result = client.gen_response(image)
             print(result.shape)
     print('inference time is', time.time() - t0)
