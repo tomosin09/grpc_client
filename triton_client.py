@@ -1,10 +1,8 @@
-import asyncio
 import time
 import sys
 import tritonclient.grpc as grpcclient
-import random
 import cv2
-import os
+import numpy as np
 
 from transform_image import preprocess
 
@@ -60,14 +58,14 @@ class TritonClient:
 if __name__ == "__main__":
     t0 = time.time()
     images = []
-    dir_images = 'test_image'
-    names = os.listdir(dir_images)
-    for i in names:
-        images.append(os.path.join(dir_images, i))
-    client = TritonClient(url='localhost:8001', model_name='extractor_onnx')
+    numbers_images = 10
+    for i in range(numbers_images):
+        images.append(np.random.random((112, 112, 3)).astype(np.float32))
+    client = TritonClient(url='185.91.53.133:8001', model_name='extractor_onnx')
     if client.is_alive():
         for i, img in enumerate(images):
-            image = cv2.imread(img)
-            result = client.gen_response(image)
+            t1 = time.time()
+            result = client.gen_response(img)
             print(result.shape)
-    print('inference time is', time.time() - t0)
+            print("-"*30+'\ninference time is', time.time() - t1)
+    print("#"*30 + '\ninference time is', time.time() - t0)

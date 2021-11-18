@@ -12,8 +12,6 @@ def preprocess(image, channels, h, w):
         d = int((128 - h) / 2 + 112)  # y end
         cropped = image[a:b, c:d]  # center crop the image
         cropped = cropped[..., ::-1]  # BGR to RGB
-        # flip image horizontally
-        flipped = cv2.flip(cropped, 1)
 
         def to_format(image):
             image = image.swapaxes(1, 2).swapaxes(0, 1)
@@ -22,4 +20,4 @@ def preprocess(image, channels, h, w):
             image = (image - 127.5) / 128.0
             return image
 
-        return (to_format(cropped) + to_format(flipped)).astype(np.float32)
+        return to_format(cropped).astype(np.float32)
