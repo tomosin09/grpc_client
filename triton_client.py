@@ -61,7 +61,7 @@ if __name__ == "__main__":
     numbers_images = 10
     for i in range(numbers_images):
         images.append(np.random.random((112, 112, 3)).astype(np.float32))
-    client = TritonClient(url='185.91.53.133:8001', model_name='extractor_onnx')
+    client = TritonClient(url='0.0.0.0:8001', model_name='model_name')
     if client.is_alive():
         for i, img in enumerate(images):
             t1 = time.time()
